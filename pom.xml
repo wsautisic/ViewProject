@@ -55,6 +55,11 @@
 			<artifactId>reactor-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+        <!-- 后端 aop 注解 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
 		<!-- 前端 框架 bootstrap -->
 		<dependency>
 			<groupId>org.webjars</groupId>
