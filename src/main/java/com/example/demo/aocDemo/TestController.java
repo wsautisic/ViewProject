@@ -5,9 +5,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-
-@ComponentScan
-@EnableAutoConfiguration
+//
+//@ComponentScan
+//@EnableAutoConfiguration
 @RestController
 @RequestMapping("/test")
 public class TestController {
@@ -15,8 +15,8 @@ public class TestController {
   @Mu
   @RequestMapping("/testdo")
   @ResponseBody
-  public String test(){
-    System.out.println("this is test");
-    return "this is test";
+  public String test(String time,String value){
+    System.out.println("this is test "+time+" "+value);
+    return " i love "+time;
   }
 }
