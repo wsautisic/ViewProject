@@ -1,6 +1,7 @@
 package com.example.demo.IOC.impl;
 
 
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,7 @@ public class PostDataAspectImpl {
   }
 
   @AfterReturning(value = "cut()",returning = "result")
-  public void afterReturning(ProceedingJoinPoint joinPoint,Object result){
+  public void afterReturning( Object result){
     System.out.println("DataPost ---> afterReturning "+String.valueOf(result));
 
   }
