@@ -47,9 +47,9 @@ public class AspectImpl {
         logInfo(object,0);
 
       }
-      Object[] fields = {"7","8"};
+      args[1] = "9";
 
-      result = joinPoint.proceed(fields);
+      result = joinPoint.proceed(args);
 
     }catch (Exception e){
 
