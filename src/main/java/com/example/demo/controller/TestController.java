@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.IOC.PostData;
-import com.example.demo.aocDemo.Mu;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,8 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/test")
 public class TestController {
-
-  @Mu
   @PostData
   @RequestMapping("/testdo")
   @ResponseBody
