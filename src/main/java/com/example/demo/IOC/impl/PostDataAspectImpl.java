@@ -6,6 +6,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.springframework.stereotype.Component;
 
+/**
+ * 接收发送约定好的数据
+ * 默认接收json格式的数据
+ * 并且返回json字符串格式的数据
+ * 而且加密
+ */
 @Component
 @Aspect
 public class PostDataAspectImpl {
