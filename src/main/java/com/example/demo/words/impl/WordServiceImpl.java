@@ -34,13 +34,17 @@ public class WordServiceImpl implements WordService {
   @Override
   public void exportWord() throws IOException {
     LocalDate ldt = LocalDate.now();
-    String readPath="D:\\user\\89006176\\Documents\\测试用文档.docx";
-    String exportPath="C:\\test\\89006176\\"+ ldt.format(DateTimeFormatter.BASIC_ISO_DATE)+"测试用文档.docx";
-
+    String readPath=".\\word\\测试用文档.docx";
+    String exportPath=".\\word\\text\\"+ ldt.format(DateTimeFormatter.BASIC_ISO_DATE)+"测试用文档.docx";
+    File photoFileDir = new File(exportPath);
+    // 注意path参数，最后是有斜杠的
+    if(!photoFileDir.exists()){ // 如果路径不存在，就创建路径
+      photoFileDir.mkdirs();
+    }
 
     XWPFDocument document = new XWPFDocument(POIXMLDocument.openPackage(readPath));
 //    FileOutputStream outStream = null;
-    try (FileOutputStream outStream = new FileOutputStream(exportPath);){
+    try (FileOutputStream outStream = new FileOutputStream(photoFileDir);){
 
       /**
        * 对段落中的标记进行替换
