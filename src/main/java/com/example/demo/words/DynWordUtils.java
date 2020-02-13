@@ -58,90 +58,90 @@ public class DynWordUtils {
    */
   private int currentRowIndex;
 
-  /**
-   * 入口
-   *
-   * @param paramMap     模板中使用的参数
-   * @param templatePaht 模板全路径
-   * @param outPath      生成的文件存放的本地全路径
-   */
-  public static void process(Map<String, Object> paramMap, String templatePaht, String outPath) {
-    DynWordUtils dynWordUtils = new DynWordUtils();
-    dynWordUtils.setParamMap(paramMap);
-    dynWordUtils.createWord(templatePaht, outPath);
-  }
+//  /**
+//   * 入口
+//   *
+//   * @param paramMap     模板中使用的参数
+//   * @param templatePaht 模板全路径
+//   * @param outPath      生成的文件存放的本地全路径
+//   */
+//  public static void process(Map<String, Object> paramMap, String templatePaht, String outPath) {
+//    DynWordUtils dynWordUtils = new DynWordUtils();
+//    dynWordUtils.setParamMap(paramMap);
+//    dynWordUtils.createWord(templatePaht, outPath);
+//  }
 
-  /**
-   * 生成动态的word
-   * @param templatePath
-   * @param outPath
-   */
-  public void createWord(String templatePath, String outPath) {
-    try (FileOutputStream outStream = new FileOutputStream(outPath)) {
-      InputStream inputStream = new FileInputStream(ResourceUtils.getFile(templatePath));
-      templateDoc = new XWPFDocument(OPCPackage.open(inputStream));
-      parseTemplateWord();
-      templateDoc.write(outStream);
-    } catch (Exception e) {
-      StackTraceElement[] stackTrace = e.getStackTrace();
+//  /**
+//   * 生成动态的word
+//   * @param templatePath
+//   * @param outPath
+//   */
+//  public void createWord(String templatePath, String outPath) {
+//    try (FileOutputStream outStream = new FileOutputStream(outPath)) {
+//      InputStream inputStream = new FileInputStream(ResourceUtils.getFile(templatePath));
+//      templateDoc = new XWPFDocument(OPCPackage.open(inputStream));
+//      parseTemplateWord();
+//      templateDoc.write(outStream);
+//    } catch (Exception e) {
+//      StackTraceElement[] stackTrace = e.getStackTrace();
+//
+//      String className = stackTrace[0].getClassName();
+//      String methodName = stackTrace[0].getMethodName();
+//      int lineNumber = stackTrace[0].getLineNumber();
+//
+//      logger.error("错误：第:{}行, 类名:{}, 方法名:{}", lineNumber, className, methodName);
+//      throw new RuntimeException(e.getCause().getMessage());
+//    }
+//  }
 
-      String className = stackTrace[0].getClassName();
-      String methodName = stackTrace[0].getMethodName();
-      int lineNumber = stackTrace[0].getLineNumber();
+//  /**
+//   * 解析word模板
+//   */
+//  public void parseTemplateWord() throws Exception {
+//
+//    List<IBodyElement> elements = templateDoc.getBodyElements();
+//
+//    for (; n < elements.size(); n++) {
+//      IBodyElement element = elements.get(n);
+//      // 普通段落
+//      if (element instanceof XWPFParagraph) {
+//
+//        XWPFParagraph paragraph = (XWPFParagraph) element;
+//        oldParagraph = paragraph;
+//        if (paragraph.getParagraphText().isEmpty()) {
+//          continue;
+//        }
+//
+//        delParagraph(paragraph);
+//
+//      } else if (element instanceof XWPFTable) {
+//        // 表格
+//        isTable = true;
+//        XWPFTable table = (XWPFTable) element;
+//
+//        delTable(table, paramMap);
+//        isTable = false;
+//      }
+//    }
+//
+//  }
 
-      logger.error("错误：第:{}行, 类名:{}, 方法名:{}", lineNumber, className, methodName);
-      throw new RuntimeException(e.getCause().getMessage());
-    }
-  }
-
-  /**
-   * 解析word模板
-   */
-  public void parseTemplateWord() throws Exception {
-
-    List<IBodyElement> elements = templateDoc.getBodyElements();
-
-    for (; n < elements.size(); n++) {
-      IBodyElement element = elements.get(n);
-      // 普通段落
-      if (element instanceof XWPFParagraph) {
-
-        XWPFParagraph paragraph = (XWPFParagraph) element;
-        oldParagraph = paragraph;
-        if (paragraph.getParagraphText().isEmpty()) {
-          continue;
-        }
-
-        delParagraph(paragraph);
-
-      } else if (element instanceof XWPFTable) {
-        // 表格
-        isTable = true;
-        XWPFTable table = (XWPFTable) element;
-
-        delTable(table, paramMap);
-        isTable = false;
-      }
-    }
-
-  }
-
-  /**
-   * 处理段落
-   */
-  private void delParagraph(XWPFParagraph paragraph) throws Exception {
-    List<XWPFRun> runs = oldParagraph.getRuns();
-    StringBuilder sb = new StringBuilder();
-    for (XWPFRun run : runs) {
-      String text = run.getText(0);
-      if (text == null) {
-        continue;
-      }
-      sb.append(text);
-      run.setText("", 0);
-    }
-    Placeholder(paragraph, runs, sb);
-  }
+//  /**
+//   * 处理段落
+//   */
+//  private void delParagraph(XWPFParagraph paragraph) throws Exception {
+//    List<XWPFRun> runs = oldParagraph.getRuns();
+//    StringBuilder sb = new StringBuilder();
+//    for (XWPFRun run : runs) {
+//      String text = run.getText(0);
+//      if (text == null) {
+//        continue;
+//      }
+//      sb.append(text);
+//      run.setText("", 0);
+//    }
+//    Placeholder(paragraph, runs, sb);
+//  }
 
 
   /**
@@ -229,23 +229,23 @@ public class DynWordUtils {
     return newPar;
   }
 
-  /**
-   * 处理表格（遍历）
-   *
-   * @param table    表格
-   * @param paramMap 需要替换的信息集合
-   */
-  public void delTable(XWPFTable table, Map<String, Object> paramMap) throws Exception {
-    List<XWPFTableRow> rows = table.getRows();
-    for (int i = 0, size = rows.size(); i < size; i++) {
-      XWPFTableRow row = rows.get(i);
-      currentRowIndex = i;
-      // 如果是动态添加行 直接处理后终止
-      if (delAndJudgeRow(table, paramMap, row)) {
-        return;
-      }
-    }
-  }
+//  /**
+//   * 处理表格（遍历）
+//   *
+//   * @param table    表格
+//   * @param paramMap 需要替换的信息集合
+//   */
+//  public void delTable(XWPFTable table, Map<String, Object> paramMap) throws Exception {
+//    List<XWPFTableRow> rows = table.getRows();
+//    for (int i = 0, size = rows.size(); i < size; i++) {
+//      XWPFTableRow row = rows.get(i);
+//      currentRowIndex = i;
+//      // 如果是动态添加行 直接处理后终止
+//      if (delAndJudgeRow(table, paramMap, row)) {
+//        return;
+//      }
+//    }
+//  }
 
   /**
    * 判断并且是否是动态行，并且处理表格占位符
@@ -511,7 +511,7 @@ public class DynWordUtils {
     }
   }
 
-  public void setParamMap(Map<String, Object> paramMap) {
-    this.paramMap = paramMap;
-  }
+//  public void setParamMap(Map<String, Object> paramMap) {
+//    this.paramMap = paramMap;
+//  }
 }

@@ -30,7 +30,7 @@ public class WordServiceImpl implements WordService {
   JSONObject jo = new JSONObject();
   Map map = new HashMap();
   WordServiceImpl(){
-    //动态表格数据模拟
+    //单行重复动态表格数据模拟
     JSONArray ja = new JSONArray();
     String[] table1Name = {"cell1","cell2"};
     JSONObject jo ;
@@ -42,9 +42,23 @@ public class WordServiceImpl implements WordService {
       }
       ja.add(jo);
     }
+    //多行重复动态表格数据模拟
+    JSONArray repeatja = new JSONArray();
+    String[] repeatCellName = {"Cell1","Cell2","Cell3","Cell4"};
+    for (int i = 0; i < 3; i++) {
+      jo = new JSONObject();
+      for (String s : repeatCellName) {
+        jo.put(s,s+"Repeat"+i);
+      }
+      repeatja.add(jo);
+    }
+
+
     map.put("${contCode}","qwerasdf");
     map.put("wordtable1",ja.toJSONString());
-    System.out.println(ja.toJSONString());
+    map.put("wordTable2",repeatja.toJSONString());
+
+    System.out.println(repeatja.toJSONString());
   }
 
   @Override
@@ -173,22 +187,28 @@ public class WordServiceImpl implements WordService {
    * @param params
    */
   public static void replaceInTable(XWPFTable xwpfTable, Map<String, String> params) throws Exception {
-    List<XWPFTableRow> rows = xwpfTable.getRows();
     System.out.println("表格打印：");
     System.out.println(xwpfTable.getText());
+    int startNum;
+    int repeatSize;
     //判断表格是否单行动态表格
     if(PoiWordUtils.isAddRow(xwpfTable)){
-
-      WordTableVO wtVO = new WordTableVO(xwpfTable,1,params);
+      startNum = PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowFlag);
+      WordTableVO wtVO = new WordTableVO(xwpfTable,startNum,params);
       wtVO.replaceInAddRowTable();
 //      replaceInAddRowTable(xwpfTable,params);
       return;
     }
     //多行模板替换${tbAddRowRepeat:0,2,0,1}   判断'${tbAddRowRepeat:'
     if(PoiWordUtils.isAddRowRepeat(xwpfTable)){
-      WordTableVO wtVO = new WordTableVO(xwpfTable,1,1,params);
+      startNum = PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowRepeatFlag);
+      repeatSize = PoiWordUtils.findRepeatSize(xwpfTable,PoiWordUtils.addRowRepeatFlag,startNum);
+      WordTableVO wtVO = new WordTableVO(xwpfTable,PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowRepeatFlag),repeatSize,params);
+      wtVO.replaceInAddRowTable();
       return;
     }
+    List<XWPFTableRow> rows = xwpfTable.getRows();
+
     for (XWPFTableRow row : rows) {
       //先判断这个表格是否为动态替换
       //动态表格替换${tbAddRow:tb1}    判断'${tbAddRow:'
@@ -199,86 +219,86 @@ public class WordServiceImpl implements WordService {
   }
 
 
-  /**
-   * 动态表格替换
-   * 根据表格中是否包含${tbAddRow: 标识判断是否动态替换表格
-   * 如果是则根据后面的字段名进行循环替换处理
-   *
-   *
-   * @param xwpfTable
-   * @param params
-   */
-  public static void replaceInAddRowTable(XWPFTable xwpfTable,Map<String, String> params){
-    //查找需要替换的所在行
-    List<XWPFTableRow> rows = xwpfTable.getRows();
-    //查找第几行为需要重复替换的行
-    int replaceLineNum = -1;
-    //标识
-    String fieldstr = null;
-    //截取出的子表名
-    String tablekey = null;
-    //循环查询行号及标识
-    for (int i = 0; i < rows.size(); i++) {
-      XWPFTableRow row = rows.get(i);
-      List<XWPFTableCell>  cells = row.getTableCells();
-      for (XWPFTableCell cell : cells) {
-        if(cell.getText().startsWith(PoiWordUtils.addRowFlag)){
-          replaceLineNum = i ;
-          fieldstr = cell.getText().substring(cell.getText().indexOf("${tbAddRow:")+11,cell.getText().indexOf("}"));
-          tablekey = fieldstr.substring(0,fieldstr.indexOf("."));
-          break;
-        }
-      }
-    }
-    //验证
-    if(replaceLineNum<0&&fieldstr!=null&&fieldstr.length()>0){
-      return;
-    }
-    //每个单元格数据记录
-    List<String> cellStr = new ArrayList<String>();
-    //单元格copy数据
-    List<String> cellStrcopy;
-    //所属表格array数据
-    JSONArray tableArray = JSONArray.parseArray(params.get(tablekey));
-
-    JSONObject tableobj ;
-
-    XWPFTableRow repeatRow = rows.get(replaceLineNum);
-    int wordcellSize = repeatRow.getTableCells().size();
-    //构建参数  标识与值对应
-    Map<String, String> tableMap ;
-    //循环多行数据
-    for (int i = 0; i < tableArray.size(); i++) {
-      tableMap = new HashMap<>();
-      tableobj = tableArray.getJSONObject(i);
-      //组装键值对应
-      for (Map.Entry entry:tableobj.entrySet()) {
-        tableMap.put("${tbAddRow:"+tablekey+"."+entry.getKey()+"}", String.valueOf(entry.getValue()));
-      }
-      //记录单元格原数据
-      for (XWPFTableCell tableCell : repeatRow.getTableCells()) {
-        cellStr.add(tableCell.getText());
-      }
-      //复制单元格原数据
-       cellStrcopy = cellStr;
-      //创建行和创建需要的列
-      XWPFTableRow row = xwpfTable.insertNewTableRow(replaceLineNum+i+1);//添加一个新行 在模板行后添加
-      //创建列
-      for(int j = 0;j<wordcellSize;j++){
-        row.createCell();
-      }
-
-      //创建行,根据需要插入的数据添加新行，不处理表头
-      List<XWPFTableCell> cells = row.getTableCells();
-      for(int j = 0; j < wordcellSize; j++){
-        XWPFTableCell cell02 = cells.get(j);
-        cell02.setText(tableMap.get(cellStrcopy.get(j)));
-      }
-
-    }
-    //删除原模板列
-    xwpfTable.removeRow(replaceLineNum);
-  }
+//  /**
+//   * 动态表格替换
+//   * 根据表格中是否包含${tbAddRow: 标识判断是否动态替换表格
+//   * 如果是则根据后面的字段名进行循环替换处理
+//   *
+//   *
+//   * @param xwpfTable
+//   * @param params
+//   */
+//  public static void replaceInAddRowTable(XWPFTable xwpfTable,Map<String, String> params){
+//    //查找需要替换的所在行
+//    List<XWPFTableRow> rows = xwpfTable.getRows();
+//    //查找第几行为需要重复替换的行
+//    int replaceLineNum = -1;
+//    //标识
+//    String fieldstr = null;
+//    //截取出的子表名
+//    String tablekey = null;
+//    //循环查询行号及标识
+//    for (int i = 0; i < rows.size(); i++) {
+//      XWPFTableRow row = rows.get(i);
+//      List<XWPFTableCell>  cells = row.getTableCells();
+//      for (XWPFTableCell cell : cells) {
+//        if(cell.getText().startsWith(PoiWordUtils.addRowFlag)){
+//          replaceLineNum = i ;
+//          fieldstr = cell.getText().substring(cell.getText().indexOf("${tbAddRow:")+11,cell.getText().indexOf("}"));
+//          tablekey = fieldstr.substring(0,fieldstr.indexOf("."));
+//          break;
+//        }
+//      }
+//    }
+//    //验证
+//    if(replaceLineNum<0&&fieldstr!=null&&fieldstr.length()>0){
+//      return;
+//    }
+//    //每个单元格数据记录
+//    List<String> cellStr = new ArrayList<String>();
+//    //单元格copy数据
+//    List<String> cellStrcopy;
+//    //所属表格array数据
+//    JSONArray tableArray = JSONArray.parseArray(params.get(tablekey));
+//
+//    JSONObject tableobj ;
+//
+//    XWPFTableRow repeatRow = rows.get(replaceLineNum);
+//    int wordcellSize = repeatRow.getTableCells().size();
+//    //构建参数  标识与值对应
+//    Map<String, String> tableMap ;
+//    //循环多行数据
+//    for (int i = 0; i < tableArray.size(); i++) {
+//      tableMap = new HashMap<>();
+//      tableobj = tableArray.getJSONObject(i);
+//      //组装键值对应
+//      for (Map.Entry entry:tableobj.entrySet()) {
+//        tableMap.put("${tbAddRow:"+tablekey+"."+entry.getKey()+"}", String.valueOf(entry.getValue()));
+//      }
+//      //记录单元格原数据
+//      for (XWPFTableCell tableCell : repeatRow.getTableCells()) {
+//        cellStr.add(tableCell.getText());
+//      }
+//      //复制单元格原数据
+//       cellStrcopy = cellStr;
+//      //创建行和创建需要的列
+//      XWPFTableRow row = xwpfTable.insertNewTableRow(replaceLineNum+i+1);//添加一个新行 在模板行后添加
+//      //创建列
+//      for(int j = 0;j<wordcellSize;j++){
+//        row.createCell();
+//      }
+//
+//      //创建行,根据需要插入的数据添加新行，不处理表头
+//      List<XWPFTableCell> cells = row.getTableCells();
+//      for(int j = 0; j < wordcellSize; j++){
+//        XWPFTableCell cell02 = cells.get(j);
+//        cell02.setText(tableMap.get(cellStrcopy.get(j)));
+//      }
+//
+//    }
+//    //删除原模板列
+//    xwpfTable.removeRow(replaceLineNum);
+//  }
 
 
   /**

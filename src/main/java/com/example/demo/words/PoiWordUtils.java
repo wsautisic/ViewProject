@@ -44,12 +44,12 @@ public class PoiWordUtils {
   public static final String addRowRepeatText = "tbAddRowRepeat:";
 
   /**
-   * 表格中占位符的开头 ${tbAddRow:  例如${tbAddRow:tb1}
+   * 表格中占位符的开头 ${tbAddRow:  例如${tbAddRow:table1.tb1}
    */
   public static final String addRowFlag = PLACEHOLDER_PREFIX + addRowText;
 
   /**
-   * 表格中占位符的开头 ${tbAddRowRepeat:  例如 ${tbAddRowRepeat:0,2,0,1} 第0行到第2行，第0列到第1列 为模板样式
+   * 表格中占位符的开头 ${tbAddRowRepeat:  例如 ${tbAddRowRepeat:table1.tb1[1,2]} 第(1+1)行到第(2+1)行(第一行为第0行,根据数组下标计数) 为模板样式
    */
   public static final String addRowRepeatFlag = PLACEHOLDER_PREFIX + addRowRepeatText;
 
@@ -314,4 +314,67 @@ public class PoiWordUtils {
 
     }
   }
+
+  /**
+   * 获取范本重复行所在行数
+   * @param xwpfTable
+   * @param str
+   * @return
+   */
+  public static int findStartNum(XWPFTable xwpfTable, String str){
+//    int startNum = -1;
+    List<XWPFTableRow> rows = xwpfTable.getRows();
+    List<XWPFTableCell> cells ;
+    XWPFTableRow row;
+    for (int i = 0; i < rows.size(); i++) {
+      row = rows.get(i);
+      cells = row.getTableCells();
+
+      for (XWPFTableCell cell : cells) {
+        if(cell.getText().indexOf(str)>-1){
+
+          return i;
+        }
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * ${tbAddRowRepeat:table1.tb1[1,2]}
+   * @param xwpfTable
+   * @param str
+   * @param StartNum
+   * @return
+   */
+  public static int findRepeatSize(XWPFTable xwpfTable, String str, int StartNum){
+    int RepeatSize = -1;
+
+    List<XWPFTableRow> rows = xwpfTable.getRows();
+    List<XWPFTableCell> cells ;
+    XWPFTableRow row;
+
+    row = rows.get(StartNum);
+    cells = row.getTableCells();
+    String cell_text ;
+    String[] rowNumStrs;
+    //依然默认一格仅一个字段
+    for (XWPFTableCell cell : cells) {
+      cell_text = cell.getText();
+      int  addRowRepeatFlag_Num = cell_text.indexOf(PoiWordUtils.addRowRepeatFlag);
+//      int  PLACEHOLDER_PREFIX_Num = cell_text.indexOf(PoiWordUtils.PLACEHOLDER_PREFIX);
+      int  PLACEHOLDER_END_Num = cell_text.indexOf(PoiWordUtils.PLACEHOLDER_END);
+      if(addRowRepeatFlag_Num>-1
+          && PLACEHOLDER_END_Num>addRowRepeatFlag_Num){
+        cell_text = cell_text.substring(cell_text.indexOf(PoiWordUtils.addRowRepeatFlag),cell_text.indexOf(PoiWordUtils.PLACEHOLDER_END)+1);
+        cell_text = cell_text.substring(cell_text.indexOf("[")+1,cell_text.indexOf("]"));
+        rowNumStrs = cell_text.split(",");
+        RepeatSize = Integer.valueOf(rowNumStrs[1]) - Integer.valueOf(rowNumStrs[0]) +1 ;
+      }
+    }
+
+    return RepeatSize;
+  }
+
 }

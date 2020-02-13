@@ -31,6 +31,12 @@ public class WordTableVO {
   Set<String> tableNameSet = new HashSet();
   //组装本列表对象所需要的信息  需放入的数据
   List<Map<String,String>> rowValuesArray = new ArrayList<>();
+  //开头格式
+  String indexKey;
+  //开头格式
+  String Repeatstr = "";
+
+
 
   public WordTableVO(XWPFTable xwpfTable, Map<String, String> params){
     this.xwpfTable = xwpfTable;
@@ -44,6 +50,7 @@ public class WordTableVO {
     this.xwpfTable = xwpfTable;
     this.startNum = startNum;
     this.params = params;
+    this.indexKey = PoiWordUtils.addRowFlag;
     tableType = TABLE_ONE;
   }
 
@@ -52,6 +59,7 @@ public class WordTableVO {
     this.startNum = startNum;
     this.RepeatSize = RepeatSize;
     this.params = params;
+    this.indexKey = PoiWordUtils.addRowRepeatFlag;
     tableType = TABLE_MORE;
   }
 
@@ -79,9 +87,13 @@ public class WordTableVO {
       rowText = new JSONArray();
       for (XWPFTableCell cell : cells) {
         rowText.add(cell.getText());
-        if(cell.getText().indexOf("${tb") >= 0){
+        if(cell.getText().indexOf(indexKey) >= 0){
           //默认每单元格仅有一个字段，故只获取一次字段信息即可
-          fieldstr = cell.getText().substring(cell.getText().indexOf("${tbAddRow:")+11,cell.getText().indexOf("}"));
+          fieldstr = cell.getText().substring(cell.getText().indexOf(indexKey)+indexKey.length(),cell.getText().indexOf("}"));
+          if(fieldstr.indexOf("[")> -1){
+            Repeatstr = fieldstr.substring(fieldstr.indexOf("["),fieldstr.indexOf("]")+1);
+            fieldstr = fieldstr.substring(0,fieldstr.indexOf("["));
+          }
           tableNamestr = fieldstr.substring(0,fieldstr.indexOf("."));
           tableNameSet.add(tableNamestr);
         }
@@ -109,7 +121,7 @@ public class WordTableVO {
         tableMap = new HashMap();
         //组装键值对应
         for (Map.Entry entry:tableobj.entrySet()) {
-          tableMap.put("${tbAddRow:"+s+"."+entry.getKey()+"}", String.valueOf(entry.getValue()));
+          tableMap.put(indexKey+s+"."+entry.getKey()+Repeatstr+"}", String.valueOf(entry.getValue()));
         }
         rowValuesArray.add(tableMap);
       }
@@ -133,7 +145,7 @@ public class WordTableVO {
 
       for (int i1 = 0; i1 < rowValuesCopy.size(); i1++) {
         cellsArray = rowValuesCopy.get(i1);
-        XWPFTableRow row = xwpfTable.insertNewTableRow(startNum+RepeatSize+i);//添加一个新行 在模板行后添加
+        XWPFTableRow row = xwpfTable.insertNewTableRow(startNum+RepeatSize*(i+1)+i1);//添加一个新行 在模板行后添加
         //每次循环为一个单元格
         for (int i2 = 0; i2 < cellsArray.size(); i2++) {
           cell_text = cellsArray.getString(i2);
@@ -164,12 +176,12 @@ public class WordTableVO {
     }else if(addRowRepeatFlag_Num>-1
         && PLACEHOLDER_END_Num>addRowRepeatFlag_Num){
       //正常的多行标识
-      fieldKey = cell_text.substring(addRowFlag_Num,PLACEHOLDER_END_Num+1);
+      fieldKey = cell_text.substring(addRowRepeatFlag_Num,PLACEHOLDER_END_Num+1);
       resultStr = cell_text.replace(fieldKey,tableMap.get(fieldKey))  ;
     }else if(PLACEHOLDER_PREFIX_Num>-1
         && PLACEHOLDER_END_Num>PLACEHOLDER_PREFIX_Num){
       //正常普通替换标识
-      fieldKey = cell_text.substring(addRowFlag_Num,PLACEHOLDER_END_Num+1);
+      fieldKey = cell_text.substring(PLACEHOLDER_PREFIX_Num,PLACEHOLDER_END_Num+1);
       resultStr = cell_text.replace(fieldKey,params.get(fieldKey))  ;
     }else if( PLACEHOLDER_PREFIX_Num>-1 && PLACEHOLDER_END_Num ==-1 ){
       //不正常替换标识 提示
