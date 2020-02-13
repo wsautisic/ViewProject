@@ -27,6 +27,9 @@ public class HelloWorldController {
     } catch (IOException e) {
       System.out.println("文件读取出错！"+e.getMessage());
       e.printStackTrace();
+    }catch (Exception e){
+      System.out.println("文件读取出错！"+e.getMessage());
+      e.printStackTrace();
     }
 
     return str;

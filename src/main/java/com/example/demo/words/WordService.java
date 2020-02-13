@@ -7,5 +7,5 @@ import java.io.IOException;
 public interface WordService {
 
 
-  void exportWord() throws IOException;
+  void exportWord() throws Exception;
 }
