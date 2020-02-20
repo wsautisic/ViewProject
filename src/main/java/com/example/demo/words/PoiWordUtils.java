@@ -137,7 +137,7 @@ public class PoiWordUtils {
    */
   private static boolean isDynRow(XWPFTable xwpfTable, String dynFlag) {
     boolean isDynRow = false;
-    if (xwpfTable == null||DataCheck.isNull(dynFlag)) {
+    if (xwpfTable == null|| DataCheck.isNull(dynFlag)) {
       return isDynRow;
     }
     String tableText = xwpfTable.getText();

@@ -12,6 +12,8 @@ import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -25,6 +27,7 @@ import java.util.Map;
 
 @Service
 public class WordServiceImpl implements WordService {
+  private static final Logger logger = LoggerFactory.getLogger(WordServiceImpl.class);
 
 //  JSONObject jo = new JSONObject();
   /* 测试数据 */
@@ -101,8 +104,10 @@ public class WordServiceImpl implements WordService {
       document.write(outStream);
       outStream.flush();
 //      outStream.close();
-    } catch (IOException e) {
-      e.printStackTrace();
+    }catch (IOException e) {
+      logger.error("文档输入流报错！",e);
+    } catch(Exception e){
+      logger.error("生成文档时出错！[{}]",e.getMessage(),e);
     }
   }
 
