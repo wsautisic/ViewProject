@@ -26,10 +26,12 @@ import java.util.Map;
 @Service
 public class WordServiceImpl implements WordService {
 
-  /* 用来记录替换文本 */
-  JSONObject jo = new JSONObject();
+//  JSONObject jo = new JSONObject();
+  /* 测试数据 */
   Map map = new HashMap();
   WordServiceImpl(){
+    String longStr = "是当时的发发撒地方啊手动阀发射点发打发发发是当时的发发撒地方啊手动阀发射点发打发" +
+        "发发是当时的发发撒地方啊手动阀发射点发打发发发是当时的发发撒地方啊手动阀发射点发打发发发";
     //单行重复动态表格数据模拟
     JSONArray ja = new JSONArray();
     String[] table1Name = {"cell1","cell2"};
@@ -38,7 +40,7 @@ public class WordServiceImpl implements WordService {
       jo = new JSONObject();
 
       for (String fieldName:table1Name){
-        jo.put(fieldName,fieldName+"-"+i);
+        jo.put(fieldName,longStr+"-"+i);
       }
       ja.add(jo);
     }
@@ -48,7 +50,7 @@ public class WordServiceImpl implements WordService {
     for (int i = 0; i < 3; i++) {
       jo = new JSONObject();
       for (String s : repeatCellName) {
-        jo.put(s,s+"Repeat"+i);
+        jo.put(s,s+longStr+"Repeat"+i);
       }
       repeatja.add(jo);
     }
@@ -77,14 +79,17 @@ public class WordServiceImpl implements WordService {
 
       List<XWPFTable> tables = document.getTables();
       /**
+       * 对表格中的标记进行替换
+       */
+      replaceInTables(tables, map);
+      /**
        * 对段落中的标记进行替换
        */
       List<XWPFParagraph> parasList = document.getParagraphs();
       replaceInAllParagraphs(parasList, map);
-      /**
-       * 对表格中的标记进行替换
-       */
-      replaceInTables(tables, map);
+
+      WordTableVO.getParagraph(parasList);
+
       /**
        * 动态表格功能
        */

@@ -2,10 +2,9 @@ package com.example.demo.words;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import org.apache.poi.xwpf.usermodel.XWPFTable;
-import org.apache.poi.xwpf.usermodel.XWPFTableCell;
-import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.poi.xwpf.usermodel.*;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class WordTableVO {
@@ -25,6 +24,8 @@ public class WordTableVO {
   int RepeatSize = 1;
   //数据
   Map<String, String> params;
+  //转换后字段数据
+  static Map<String, String> paramsField;
   //重复区间行值信息 源文本数据
   List<JSONArray> rowValues = new ArrayList<>();
   //包含表名  正常来说每个表格只对应一个子表，若有不同再进行扩展
@@ -63,12 +64,77 @@ public class WordTableVO {
     tableType = TABLE_MORE;
   }
 
+  /**
+   * 正常表格处理顺序
+   * @throws Exception
+   */
   public void replaceInAddRowTable() throws Exception {
     getRowValesAndTableSet();
     getRowValueArray();
     addrow();
     removeRow();
   }
+  /** 正文处理代码 **/
+//  XWPFParagraph：代表一个段落。
+//
+//  XWPFRun：代表具有相同属性的一段文本。
+//
+//  XWPFTable：代表一个表格。
+//
+//  XWPFTableRow：表格的一行。
+//
+//  XWPFTableCell：表格对应的一个单元格。
+  static int aa = 1;
+  public static void getParagraph(List<XWPFParagraph> ParagraphArray) throws Exception {
+    paramsField = new HashMap<> ();
+    paramsField.put("${xtbh}","测试先");
+    List<XWPFRun> runs;
+    XWPFRun run;
+    XWPFRun beginRun = null;
+    String runText;
+    StringBuilder runSBD = new StringBuilder();
+    List removeNumArray ;
+    for (XWPFParagraph P : ParagraphArray) {
+      runs= P.getRuns();
+      removeNumArray = new ArrayList();
+      for (int i = 0; i < runs.size(); i++) {
+        run = runs.get(i);
+        runText = String.valueOf(run);
+
+        if(runSBD != null && runSBD.length()>0){
+          removeNumArray.add(i);
+          runSBD.append(runText);
+        }
+
+        if(runText.contains(PoiWordUtils.PLACEHOLDER_PREFIX)){
+          aa =2;
+          beginRun = run;
+          runSBD.append(runText);
+        }else if(beginRun !=null && runText.contains(PoiWordUtils.PLACEHOLDER_END)){
+
+          beginRun.setText("**"+getStaticNewCellText(runSBD.toString(),paramsField)+"**",0);
+
+          beginRun = null;
+          runSBD = new StringBuilder();
+
+        }
+
+      }
+
+      for (int i = removeNumArray.size(); i > 0 ; i--) {
+        aa = 3;
+        P.removeRun((Integer) removeNumArray.get(i-1));
+      }
+
+      if(aa == 3){
+        return ;
+      }
+
+    }
+  }
+
+
+  /** 表格处理代码 **/
   /**
    * 获取单次重复区间 重复信息以便服用
    * 获取单次重复区间 包含表名以便获取数据
@@ -183,6 +249,39 @@ public class WordTableVO {
       //正常普通替换标识
       fieldKey = cell_text.substring(PLACEHOLDER_PREFIX_Num,PLACEHOLDER_END_Num+1);
       resultStr = cell_text.replace(fieldKey,params.get(fieldKey))  ;
+    }else if( PLACEHOLDER_PREFIX_Num>-1 && PLACEHOLDER_END_Num ==-1 ){
+      //不正常替换标识 提示
+      throw new Exception("解析存在问题，需要添加段落处理功能");
+    }else{
+      //不用处理
+    }
+    return resultStr;
+
+  }
+
+  private static String getStaticNewCellText(String cell_text , Map<String,String> tableMap ) throws Exception {
+    int  addRowFlag_Num = cell_text.indexOf(PoiWordUtils.addRowFlag);
+    int  addRowRepeatFlag_Num = cell_text.indexOf(PoiWordUtils.addRowRepeatFlag);
+    int  PLACEHOLDER_PREFIX_Num = cell_text.indexOf(PoiWordUtils.PLACEHOLDER_PREFIX);
+    int  PLACEHOLDER_END_Num = cell_text.indexOf(PoiWordUtils.PLACEHOLDER_END);
+
+    String fieldKey;
+    String resultStr = cell_text;
+    if(addRowFlag_Num>-1
+        && PLACEHOLDER_END_Num>addRowFlag_Num){
+      //存在正常的单行标识
+      fieldKey = cell_text.substring(addRowFlag_Num,PLACEHOLDER_END_Num+1);
+      resultStr = cell_text.replace(fieldKey,tableMap.get(fieldKey))  ;
+    }else if(addRowRepeatFlag_Num>-1
+        && PLACEHOLDER_END_Num>addRowRepeatFlag_Num){
+      //正常的多行标识
+      fieldKey = cell_text.substring(addRowRepeatFlag_Num,PLACEHOLDER_END_Num+1);
+      resultStr = cell_text.replace(fieldKey,tableMap.get(fieldKey))  ;
+    }else if(PLACEHOLDER_PREFIX_Num>-1
+        && PLACEHOLDER_END_Num>PLACEHOLDER_PREFIX_Num){
+      //正常普通替换标识
+      fieldKey = cell_text.substring(PLACEHOLDER_PREFIX_Num,PLACEHOLDER_END_Num+1);
+      resultStr = cell_text.replace(fieldKey,tableMap.get(fieldKey))  ;
     }else if( PLACEHOLDER_PREFIX_Num>-1 && PLACEHOLDER_END_Num ==-1 ){
       //不正常替换标识 提示
       throw new Exception("解析存在问题，需要添加段落处理功能");
