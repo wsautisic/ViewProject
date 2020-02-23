@@ -86,9 +86,16 @@ public class WordServiceImpl implements WordService {
        * 对段落中的标记进行替换
        */
       List<XWPFParagraph> parasList = document.getParagraphs();
-      replaceInAllParagraphs(parasList, map);
+      WordTableVO wordTextVO = new WordTableVO(parasList,map);
+      wordTextVO.replaceText();
+      for (XWPFTable table : tables) {
+        WordTableVO wordTableVO = WordTableVO.getTableVO(table,map);
+        wordTableVO.replaceInAddRowTable();
+      }
 
-      WordTableVO.getParagraph(parasList);
+//      replaceInAllParagraphs(parasList, map);
+
+//      WordTableVO.getParagraph(parasList);
 
       /**
        * 动态表格功能
@@ -113,6 +120,8 @@ public class WordServiceImpl implements WordService {
    * @param params
    */
   public static void replaceInAllParagraphs(List<XWPFParagraph> xwpfParagraphList, Map<String, String> params) {
+
+
     for (XWPFParagraph paragraph : xwpfParagraphList) {
       if (paragraph.getText() == null || paragraph.getText().equals("")) continue;
       for (String key : params.keySet()) {

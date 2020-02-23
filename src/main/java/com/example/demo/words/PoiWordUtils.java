@@ -82,6 +82,15 @@ public class PoiWordUtils {
     return isDynRow(xwpfTable, addRowFlag);
   }
   /**
+   * 判断当前表格是不是标志表格中需要添加行
+   *
+   * @param xwpfTable
+   * @return
+   */
+  public static boolean isAddText(XWPFTable xwpfTable) {
+    return isDynRow(xwpfTable, PLACEHOLDER_PREFIX);
+  }
+  /**
    * 判断当前行是不是标志表格中需要添加行
    *
    * @param row
@@ -376,5 +385,7 @@ public class PoiWordUtils {
 
     return RepeatSize;
   }
+
+
 
 }
