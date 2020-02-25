@@ -117,16 +117,7 @@ public class WordTableVO {
     return wordtableVO;
   }
 
-//  /**
-//   * 正常表格处理顺序
-//   * @throws Exception
-//   */
-//  public void replaceInAddRowTable() throws Exception {
-////    getRowValesAndTableSet();
-//    getRowValueArray();
-//    addrow();
-//    removeRow();
-//  }
+
 
   /**
    * 正常表格处理顺序
