@@ -352,6 +352,7 @@ public class PoiWordUtils {
 
   /**
    * ${tbAddRowRepeat:table1.tb1[1,2]}
+   * 计算重复区间包含行数
    * @param xwpfTable
    * @param str
    * @param StartNum
@@ -378,6 +379,7 @@ public class PoiWordUtils {
           && PLACEHOLDER_END_Num>addRowRepeatFlag_Num){
         cell_text = cell_text.substring(cell_text.indexOf(PoiWordUtils.addRowRepeatFlag),cell_text.indexOf(PoiWordUtils.PLACEHOLDER_END)+1);
         cell_text = cell_text.substring(cell_text.indexOf("[")+1,cell_text.indexOf("]"));
+        cell_text = cell_text.replace(" ","");
         rowNumStrs = cell_text.split(",");
         RepeatSize = Integer.valueOf(rowNumStrs[1]) - Integer.valueOf(rowNumStrs[0]) +1 ;
       }

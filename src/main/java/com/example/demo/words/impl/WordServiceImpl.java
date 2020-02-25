@@ -81,7 +81,7 @@ public class WordServiceImpl implements WordService {
       /**
        * 对表格中的标记进行替换
        */
-      replaceInTables(tables, map);
+//      replaceInTables(tables, map);
       /**
        * 对段落中的标记进行替换
        */

@@ -7,14 +7,23 @@ import org.apache.poi.xwpf.usermodel.*;
 import java.lang.reflect.Array;
 import java.util.*;
 
+/**
+ * 替换标识为  '${'+'重复类型'+':'+'子表名'+'.'+'字段名'+'['+'起始行数'+','+'结束行数'+']'+'}'
+ * 重复类型为 tbAddRowRepeat/tbAddRow   没有则不填，且不再需要':'分割
+ * 子表名                               没有则不填，且不再需要'.'分割
+ * 字段名    即参数名                    必填
+ * 起始行数与结束行数   以下标计数，第一行为 0行一次类推  没有则不填，且不再需要'[...]'
+ */
 public class WordTableVO {
-  //表格类型-单行重复
+  //第一行行号 当想更改输入行号时，可将此处改为1
+  int beginNum = 0;
+  //表格类型-单行重复  ${tbAddRow:wordtable1.cell1}
   private final static String TABLE_ONE = "ONE";
-  //表格类型-多行重复
+  //表格类型-多行重复  ${tbAddRowRepeat:wordTable2.Cell1[1,2]}
   private final static String TABLE_MORE = "MORE";
-  //表格类型-不重复
+  //表格类型-不重复    ${contCode}
   private final static String TABLE_NO = "NO";
-  //WORD文本
+  //WORD文本          ${contCode}
   private final static String WORD_TEXT = "TEXT";
   //列表对象
    XWPFTable xwpfTable;
@@ -26,6 +35,8 @@ public class WordTableVO {
   int startNum ;
   //重复区间大小
   int RepeatSize = 1;
+//  //计算行号时应修正数字
+//  int calRowNum = 1 - beginNum;
   //数据
   Map<String, String> params;
   //转换后字段数据
@@ -56,6 +67,7 @@ public class WordTableVO {
     this.startNum = -1;
     this.RepeatSize = 0;
     this.params = params;
+    this.indexKey = PoiWordUtils.PLACEHOLDER_PREFIX;
     tableType = TABLE_NO;
   }
 
@@ -82,32 +94,49 @@ public class WordTableVO {
    * @param params
    * @return 当判断不出来'${'之后即会返回null
    */
-  public static WordTableVO getTableVO(XWPFTable xwpfTable, Map<String, String> params){
+  public static WordTableVO getTableVO(XWPFTable xwpfTable, Map<String, String> params) throws Exception {
     WordTableVO wordtableVO = null;
     int startNum;
     int repeatSize;
-    if(PoiWordUtils.isAddRowRepeat(xwpfTable)){
-      startNum = PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowRepeatFlag);
-      repeatSize = PoiWordUtils.findRepeatSize(xwpfTable,PoiWordUtils.addRowRepeatFlag,startNum);
-      wordtableVO = new WordTableVO(xwpfTable,PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowRepeatFlag),repeatSize,params);
-    }else if(PoiWordUtils.isAddRow(xwpfTable)){
-      startNum = PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowFlag);
-      wordtableVO =  new WordTableVO(xwpfTable,startNum,params);
-    }else if(PoiWordUtils.isAddText(xwpfTable)){
-      wordtableVO =  new WordTableVO(xwpfTable,params);
+    try {
+      if(PoiWordUtils.isAddRowRepeat(xwpfTable)){
+        startNum = PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowRepeatFlag);
+
+        repeatSize = PoiWordUtils.findRepeatSize(xwpfTable,PoiWordUtils.addRowRepeatFlag,startNum);
+
+        wordtableVO = new WordTableVO(xwpfTable,PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowRepeatFlag),repeatSize,params);
+      }else if(PoiWordUtils.isAddRow(xwpfTable)){
+        startNum = PoiWordUtils.findStartNum(xwpfTable,PoiWordUtils.addRowFlag);
+        wordtableVO =  new WordTableVO(xwpfTable,startNum,params);
+      }else if(PoiWordUtils.isAddText(xwpfTable)){
+        wordtableVO =  new WordTableVO(xwpfTable,params);
+      }
+    }catch (ArrayIndexOutOfBoundsException e){
+      throw new Exception("未查到相关标识！");
     }
     return wordtableVO;
   }
+
+//  /**
+//   * 正常表格处理顺序
+//   * @throws Exception
+//   */
+//  public void replaceInAddRowTable() throws Exception {
+////    getRowValesAndTableSet();
+//    getRowValueArray();
+//    addrow();
+//    removeRow();
+//  }
 
   /**
    * 正常表格处理顺序
    * @throws Exception
    */
   public void replaceInAddRowTable() throws Exception {
-    getRowValesAndTableSet();
-    getRowValueArray();
-    addrow();
-    removeRow();
+    getRepeatAndTableSet();
+    getParamsFieldsMap();
+    copyRow();
+    replaceTable();
   }
 
   /**
@@ -118,30 +147,35 @@ public class WordTableVO {
     //构建参数地图
     getParamsFieldsMap();
     //替换
-    getParagraph(ParagraphArray);
+    getParagraph(ParagraphArray,paramsField);
   }
 
   /**
    * 构建替换参数map
    */
-  public void getParamsFieldsMap(){
+  public void getParamsFieldsMap() throws Exception {
     String beforeKey ;
     String AfterKey = PoiWordUtils.PLACEHOLDER_END;
 
     switch (tableType){
       case TABLE_ONE:
-        beforeKey = PoiWordUtils.addRowFlag;
+//        beforeKey = PoiWordUtils.addRowFlag;
+        getRowValueArray();
         break;
       case TABLE_MORE:
-        beforeKey = PoiWordUtils.addRowRepeatFlag;
+//        beforeKey = PoiWordUtils.addRowRepeatFlag;
+        getRowValueArray();
         break;
       default :
+        paramsField = new HashMap<>();
         beforeKey = PoiWordUtils.PLACEHOLDER_PREFIX;
+        String Key ;
+        for (Map.Entry<String, String> Entry : params.entrySet()) {
+          Key = Entry.getKey().replace(" ","");
+          paramsField.put(beforeKey+Key+AfterKey,Entry.getValue());
+        }
     }
 
-    for (Map.Entry<String, String> Entry : params.entrySet()) {
-      paramsField.put(beforeKey+Entry.getKey().trim()+AfterKey,Entry.getValue());
-    }
   }
   /** 正文处理代码 **/
 //  XWPFParagraph：代表一个段落。
@@ -154,7 +188,7 @@ public class WordTableVO {
 //
 //  XWPFTableCell：表格对应的一个单元格。
 
-  public void getParagraph(List<XWPFParagraph> ParagraphArray) throws Exception {
+  public void getParagraph(List<XWPFParagraph> ParagraphArray,Map<String, String> valueMap) throws Exception {
     List<XWPFRun> runs;
     XWPFRun run;
     XWPFRun beginRun = null;
@@ -177,7 +211,7 @@ public class WordTableVO {
           beginRun = run;
           runSBD.append(runText);
         }else if(beginRun !=null && runText.contains(PoiWordUtils.PLACEHOLDER_END)){
-          beginRun.setText(getNewCellText(runSBD.toString(),paramsField),0);
+          beginRun.setText(getNewCellText(runSBD.toString(),valueMap),0);
           beginRun = null;
           runSBD = new StringBuilder();
         }
@@ -242,8 +276,11 @@ public class WordTableVO {
   /**
    * 获取单次重复区间 重复信息以便服用
    * 获取单次重复区间 包含表名以便获取数据
+   * Repeatstr  多行重复时，重复行数信息
+   * tableNameSet 设置的字段名
+   *
    */
-  private void getRowValesAndTableSet(){
+  private void getRepeatAndTableSet(){
     List<XWPFTableRow> rows = xwpfTable.getRows();
     XWPFTableRow row;
     List<XWPFTableCell> cells;
@@ -254,9 +291,9 @@ public class WordTableVO {
     for (int i = 0; i < RepeatSize; i++) {
       row = rows.get(startNum+i);
       cells = row.getTableCells();
-      rowText = new JSONArray();
+//      rowText = new JSONArray();
       for (XWPFTableCell cell : cells) {
-        rowText.add(cell.getText());
+//        rowText.add(cell.getText());
         if(cell.getText().indexOf(indexKey) >= 0){
           //默认每单元格仅有一个字段，故只获取一次字段信息即可
           fieldstr = cell.getText().substring(cell.getText().indexOf(indexKey)+indexKey.length(),cell.getText().indexOf("}"));
@@ -266,14 +303,16 @@ public class WordTableVO {
           }
           tableNamestr = fieldstr.substring(0,fieldstr.indexOf("."));
           tableNameSet.add(tableNamestr);
+          return;
         }
       }
-      rowValues.add(rowText);
+//      rowValues.add(rowText);
     }
   }
 
   /**
    * 组装表数据地图以进行数据替换
+   * 多行数据必须用rowValuesArray 存储
    * @throws Exception
    */
   private void getRowValueArray() throws Exception {
@@ -302,32 +341,149 @@ public class WordTableVO {
    * 重复创建列表行
    * @throws Exception
    */
-  private void addrow() throws Exception {
-    Map<String,String> tableMap ;
-    JSONArray cellsArray = new JSONArray();
-    String cell_text ;
-    List<JSONArray> rowValuesCopy ;
-    //每次循环为一次重复行
-    for (int i = 0; i < rowValuesArray.size(); i++) {
-      //数据准备完毕
-      tableMap = rowValuesArray.get(i);
-      rowValuesCopy = rowValues;
+  private void copyRow() {
+    List<XWPFTableRow> rows = xwpfTable.getRows();
+    XWPFTableRow row;
+    XWPFTableCell addCell;
+    XWPFTableRow addrow;
+    //每次循环为一次重复行 从一开始是将范本行直接用了，所以省去了删除操作
+    for (int i = 1; i < rowValuesArray.size(); i++) {
+      for (int i1 = 0; i1 < RepeatSize; i1++) {
+        row = rows.get(startNum-beginNum+i1);
+        addrow = xwpfTable.insertNewTableRow(startNum-beginNum+RepeatSize*i+i1);//添加一个新行 在模板行后添加
 
-      for (int i1 = 0; i1 < rowValuesCopy.size(); i1++) {
-        cellsArray = rowValuesCopy.get(i1);
-        XWPFTableRow row = xwpfTable.insertNewTableRow(startNum+RepeatSize*(i+1)+i1);//添加一个新行 在模板行后添加
-        //每次循环为一个单元格
-        for (int i2 = 0; i2 < cellsArray.size(); i2++) {
-          cell_text = cellsArray.getString(i2);
-          XWPFTableCell cell = row.createCell();
-          System.out.println(i1+"-"+i2+"-"+getNewCellText(cell_text,tableMap)+"-"+"-"+"-"+"-"+(startNum+RepeatSize+i));
-          cell.setText(getNewCellText(cell_text,tableMap));
-        }
+        copyTableRow(addrow,row,null);
 
+//        for (XWPFTableCell tableCell : row.getTableCells()) {
+//          addCell = addrow.createCell();
+//          for (XWPFParagraph paragraph : tableCell.getParagraphs()) {
+//            addCell.insertNewParagraph(paragraph.getCTP().newCursor());
+//
+////            addCell.setParagraph(paragraph);
+////            addCell.insertNewParagraph()
+//          }
+//        }
       }
-
     }
   }
+
+  /**
+   * 功能描述:复制行，从source到target
+   *
+   * @param target
+   * @param source
+   * @param index
+   * @see [相关类/方法](可选)
+   * @since [产品/模块版本](可选)
+   */
+  public void copyTableRow(XWPFTableRow target, XWPFTableRow
+      source, Integer index) {
+    // 复制样式
+    if (source.getCtRow() != null) {
+      target.getCtRow().setTrPr(source.getCtRow().getTrPr());
+    }
+    // 复制单元格
+    for (int i = 0; i < source.getTableCells().size(); i++) {
+      XWPFTableCell cell1 = target.getCell(i);
+      XWPFTableCell cell2 = source.getCell(i);
+      if (cell1 == null) {
+        cell1 = target.addNewTableCell();
+      }
+      copyTableCell(cell1, cell2, index);
+    }
+  }
+  /**
+   * 功能描述:复制单元格，从source到target
+   *
+   * @param target
+   * @param source
+   * @param index
+   * @see [相关类/方法](可选)
+   * @since [产品/模块版本](可选)
+   */
+  public void copyTableCell(XWPFTableCell target,
+                                   XWPFTableCell source, Integer index) {
+    // 列属性
+    if (source.getCTTc() != null) {
+      target.getCTTc().setTcPr(source.getCTTc().getTcPr());
+    }
+    // 删除段落
+    for (int pos = 0; pos < target.getParagraphs().size(); pos++) {
+      target.removeParagraph(pos);
+    }
+    // 添加段落
+    for (XWPFParagraph sp : source.getParagraphs()) {
+      XWPFParagraph targetP = target.addParagraph();
+      copyParagraph(targetP, sp, index);
+    }
+  }
+  /**
+   * 功能描述:复制段落，从source到target
+   *
+   * @param target
+   * @param source
+   * @param index
+   * @see [相关类/方法](可选)
+   * @since [产品/模块版本](可选)
+   */
+  public void copyParagraph(XWPFParagraph target,
+                                   XWPFParagraph source, Integer index) {
+    // 设置段落样式
+    target.getCTP().setPPr(source.getCTP().getPPr());
+    // 移除所有的run
+    for (int pos = target.getRuns().size() - 1; pos >= 0; pos--) {
+      target.removeRun(pos);
+    }
+    // copy 新的run
+    for (XWPFRun s : source.getRuns()) {
+      XWPFRun targetrun = target.createRun();
+      copyRun(targetrun, s, index);
+    }
+  }
+  /**
+   * 功能描述:复制RUN，从source到target
+   *
+   * @param target
+   * @param source
+   * @param index
+   * @see [相关类/方法](可选)
+   * @since [产品/模块版本](可选)
+   */
+  public void copyRun(XWPFRun target, XWPFRun source, Integer
+      index) {
+    // 设置run属性
+    target.getCTR().setRPr(source.getCTR().getRPr());
+//    // 设置文本
+//    String tail = "";
+//    if (index != null) {
+//      tail = index.toString();
+//    }
+    target.setText(source.text());
+  }
+
+
+
+
+
+  public void replaceTable() throws Exception {
+    List<XWPFTableRow> rows = xwpfTable.getRows();
+    Map<String,String> tableMap ;
+    XWPFTableRow row;
+    if(rowValuesArray.size() > 0){
+      for (int i = 0; i < rowValuesArray.size(); i++) {
+        tableMap = rowValuesArray.get(i);
+        for (int i1 = 0; i1 < RepeatSize; i1++) {
+          row = rows.get(startNum+RepeatSize*i+i1);
+
+          for (XWPFTableCell tableCell : row.getTableCells()) {
+            getParagraph(tableCell.getParagraphs(),tableMap);
+          }
+
+        }
+      }
+    }
+  }
+
 
 
 
