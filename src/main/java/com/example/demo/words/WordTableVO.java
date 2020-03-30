@@ -2,8 +2,11 @@ package com.example.demo.words;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -25,6 +28,7 @@ public class WordTableVO {
   private final static String TABLE_NO = "NO";
   //WORD文本          ${contCode}
   private final static String WORD_TEXT = "TEXT";
+
   //列表对象
    XWPFTable xwpfTable;
   //word正文集合
@@ -86,6 +90,13 @@ public class WordTableVO {
     this.params = params;
     this.indexKey = PoiWordUtils.addRowRepeatFlag;
     tableType = TABLE_MORE;
+  }
+
+
+  public void setFileList(List<File> files){
+    if(files == null || files.isEmpty()){
+
+    }
   }
 
   /**
@@ -202,7 +213,14 @@ public class WordTableVO {
           beginRun = run;
           runSBD.append(runText);
         }else if(beginRun !=null && runText.contains(PoiWordUtils.PLACEHOLDER_END)){
-          beginRun.setText(getNewCellText(runSBD.toString(),valueMap),0);
+          if(runSBD.toString().contains(PoiWordUtils.addPictureFlag)){
+            beginRun.addPicture(new FileInputStream(".\\word\\围观.jpg"),
+                XWPFDocument.PICTURE_TYPE_JPEG,"围观1.jpg,", Units.toEMU(100), Units.toEMU(100)
+                );
+            beginRun.setText("",0);
+          }else{
+            beginRun.setText(getNewCellText(runSBD.toString(),valueMap),0);
+          }
           beginRun = null;
           runSBD = new StringBuilder();
         }
