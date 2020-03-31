@@ -57,7 +57,8 @@ public class PoiWordUtils {
    */
   public static final String addRowRepeatFlag = PLACEHOLDER_PREFIX + addRowRepeatText;
   /**
-   * 表格中占位符的开头 ${tbAddRow:  例如${tbAddRow:table1.tb1}
+   * 表格中占位符的开头 ${tbAddRow:  例如${tbPicture:pictureFieldName["size":["100,100","200,200"]]}
+   * size :  高:宽 如果有多个 则自动找对应的，入过没有对应的默认取第一个
    */
   public static final String addPictureFlag = PLACEHOLDER_PREFIX + addPicture;
 
