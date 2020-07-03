@@ -1,9 +1,15 @@
 package com.example.demo;
 
-import com.example.demo.words.WordService;
+import com.Util.MatchRuleUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.check.DataCheck;
+import com.example.demo.service.DemoDataService;
 import com.example.demo.words.WordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -13,6 +19,8 @@ public class HelloWorldController {
 
   @Autowired
   WordService wordService;
+  @Autowired
+  DemoDataService demoDataService;
 
   @RequestMapping("/hello")
   public String index() {
@@ -35,5 +43,35 @@ public class HelloWorldController {
     return str;
   }
 
+
+  @RequestMapping(value = "/getSupplierDemoData", method = {
+      RequestMethod.POST })
+  public String getSupplierDemoData(String type, String key , @RequestBody String string){
+    if(!DataCheck.isNull(string)){
+      JSONObject jo = JSON.parseObject(string);
+      type = jo.getString("type");
+      key = jo.getString("key");
+    }
+
+    return demoDataService.getDemoData(type,key).toJSONString();
+//    return "ok";
+  }
+
+  @RequestMapping("/hello")
+  public String isCorrectData(String dataName,String dataValue) {
+
+    boolean isCorrectData = MatchRuleUtil.isCorrectString(dataName,dataValue);
+    JSONObject jo = new JSONObject();
+    if(isCorrectData){
+      jo.put("code","200");
+      jo.put("code","成功!");
+    }else{
+      jo.put("code","500");
+      jo.put("code","失败!");
+    }
+
+
+    return jo.toJSONString();
+  }
 
 }

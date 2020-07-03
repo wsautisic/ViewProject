@@ -49,6 +49,7 @@ public class HttpUtil {
         body = EntityUtils.toString(httpResponse.getEntity());
 //        logger.info("发送和返回信息对{}--->{}", String.valueOf(list), body);
       }else{
+
 //        logger.error("推送状态信息物业接口失败！！statusCode：{}",statusCode);
         return resultJson;
       }
