@@ -42,6 +42,10 @@ public class PoiWordUtils {
   public static final String addRowText = "tbAddRow:";
 
   public static final String addRowRepeatText = "tbAddRowRepeat:";
+  /**
+   * 添加图片的独特标记
+   */
+  public static final String addPicture = "tbPicture:";
 
   /**
    * 表格中占位符的开头 ${tbAddRow:  例如${tbAddRow:table1.tb1}
@@ -52,6 +56,11 @@ public class PoiWordUtils {
    * 表格中占位符的开头 ${tbAddRowRepeat:  例如 ${tbAddRowRepeat:table1.tb1[1,2]} 第(1+1)行到第(2+1)行(第一行为第0行,根据数组下标计数) 为模板样式
    */
   public static final String addRowRepeatFlag = PLACEHOLDER_PREFIX + addRowRepeatText;
+  /**
+   * 表格中占位符的开头 ${tbAddRow:  例如${tbPicture:pictureFieldName["size":["100,100","200,200"]]}
+   * size :  高:宽 如果有多个 则自动找对应的，入过没有对应的默认取第一个
+   */
+  public static final String addPictureFlag = PLACEHOLDER_PREFIX + addPicture;
 
   /**
    * 重复矩阵的分隔符  比如：${tbAddRowRepeat:0,2,0,1} 分隔符为 ,

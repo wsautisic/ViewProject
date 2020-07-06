@@ -1,9 +1,16 @@
 package com.example.demo.words;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.*;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -25,6 +32,7 @@ public class WordTableVO {
   private final static String TABLE_NO = "NO";
   //WORD文本          ${contCode}
   private final static String WORD_TEXT = "TEXT";
+
   //列表对象
    XWPFTable xwpfTable;
   //word正文集合
@@ -86,6 +94,13 @@ public class WordTableVO {
     this.params = params;
     this.indexKey = PoiWordUtils.addRowRepeatFlag;
     tableType = TABLE_MORE;
+  }
+
+
+  public void setFileList(List<File> files){
+    if(files == null || files.isEmpty()){
+
+    }
   }
 
   /**
@@ -184,6 +199,7 @@ public class WordTableVO {
     XWPFRun run;
     XWPFRun beginRun = null;
     String runText;
+    File file;
     StringBuilder runSBD = new StringBuilder();
     List removeNumArray ;
     for (XWPFParagraph P : ParagraphArray) {
@@ -202,7 +218,18 @@ public class WordTableVO {
           beginRun = run;
           runSBD.append(runText);
         }else if(beginRun !=null && runText.contains(PoiWordUtils.PLACEHOLDER_END)){
-          beginRun.setText(getNewCellText(runSBD.toString(),valueMap),0);
+          if(runSBD.toString().contains(PoiWordUtils.addPictureFlag)){
+
+            beginRun = getFileList(beginRun,runSBD);
+
+
+
+
+
+            beginRun.setText("",0);
+          }else{
+            beginRun.setText(getNewCellText(runSBD.toString(),valueMap),0);
+          }
           beginRun = null;
           runSBD = new StringBuilder();
         }
@@ -213,6 +240,56 @@ public class WordTableVO {
       }
     }
   }
+
+  /**
+   * 获取文件
+   * @param beginRun
+   * @param runSBD    xxx${tbPicture:pictureFieldName["size":["100,100","200,200"]]}xxxx
+   * @return
+   * @throws IOException
+   * @throws InvalidFormatException
+   */
+  public XWPFRun getFileList(XWPFRun beginRun ,StringBuilder runSBD) throws IOException, InvalidFormatException {
+
+
+    JSONArray fileSettings = new JSONArray();
+    JSONObject fileSetting = JSON.parseObject("{\"size\":[\"100,100\",\"200,200\"]}");
+    JSONArray fileSizes;
+    //截取对应图片替换字符串 ${tbPicture:pictureFieldName["size":["100,100","200,200"]]}
+    String pictureStr = runSBD.substring(runSBD.indexOf(PoiWordUtils.addPictureFlag),runSBD.indexOf(PoiWordUtils.PLACEHOLDER_END)+1);
+    String fileKey = pictureStr.substring(pictureStr.indexOf(":")+1,pictureStr.indexOf("["));
+    //获取额外设置信息[{"size":["100,100","200,200"]}]
+    if(pictureStr.contains("[")){
+      String pictureSetting = pictureStr.substring(runSBD.indexOf("[")+1,runSBD.indexOf(PoiWordUtils.PLACEHOLDER_END)-1);
+      fileSetting = JSON.parseObject("{"+pictureSetting+"}");
+    }
+    fileSizes = fileSetting.getJSONArray("size");
+    String size;
+
+
+    List<File> files = new ArrayList<>();
+    //模拟文件
+    File file = new File(".\\word\\围观.jpg");
+    files.add(file);
+    files.add(file);
+    //通过字段key获取文件
+//    files=getfileList(fileKey);
+
+    for (int i1 = 0; i1 < files.size(); i1++) {
+      file = files.get(i1);
+      size = fileSizes.size() > i1 ? fileSizes.getString(i1): fileSizes.getString(0);
+      beginRun.addPicture(new FileInputStream(file),
+          XWPFDocument.PICTURE_TYPE_JPEG, file.getName(), Units.toEMU(Double.parseDouble(size.substring(size.indexOf(",")+1))), Units.toEMU(Double.parseDouble(size.substring(0,size.indexOf(","))))
+      );
+
+
+      //换行符
+      beginRun.addCarriageReturn();
+    }
+    return beginRun;
+  }
+
+
 
   /**
    * 进行字符串替换
