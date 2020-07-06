@@ -57,7 +57,7 @@ public class HelloWorldController {
 //    return "ok";
   }
 
-  @RequestMapping("/hello")
+  @RequestMapping("/isCorrectData")
   public String isCorrectData(String dataName,String dataValue) {
 
     boolean isCorrectData = MatchRuleUtil.isCorrectString(dataName,dataValue);
