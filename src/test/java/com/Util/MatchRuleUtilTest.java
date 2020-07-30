@@ -54,7 +54,7 @@ public class MatchRuleUtilTest {
 
   @Test
   public void isCorrectBusiKey() {
-    String[] tableNames={"ZX202002120506","SF_PSMP_ZLFBHT-123131313","1"};
+    String[] tableNames={"ZX202002120506","SF_PSMP_ZLFBHT-123131313","ZB_123123","1ZX202002120506","123"};
     String  matchString = MatchRuleUtil.isBusiKey;
     for (String tableName : tableNames) {
       Assert.assertTrue(MatchRuleUtil.isCorrectString(matchString,tableName));
@@ -82,7 +82,7 @@ public class MatchRuleUtilTest {
   }
   @Test
   public void isCorrectDateString() {
-    String[] tableNames={"9999-12-31"};
+    String[] tableNames={"9999-12-31","2020-6-07"};
     String  matchString = MatchRuleUtil.isDateString;
     for (String tableName : tableNames) {
       Assert.assertTrue(MatchRuleUtil.isCorrectString(matchString,tableName));

@@ -20,7 +20,7 @@ public class MatchRuleUtil {
   /** contTableName合同表名字段校验 **/
   public final static  String isContType = "^\\w+$";
   /** 名称字段校验 **/
-  public final static  String isName = "^[^%<>]+$";
+  public final static  String isName = "^[^%<>〈〉�]+$";
   /** busiKey字段校验 **/
   public final static  String isBusiKey = "^[0-9a-zA-Z_-]+$";
   /** isChangeType字段校验 **/
@@ -28,8 +28,8 @@ public class MatchRuleUtil {
   /** LinuxTime时间戳字段校验 **/
   public final static  String isLinuxTime = "^[1-9]\\d*$";
   /** DateString日期字符串字段校验 **/
-  public final static  String isDateString = "^[1-9\\-]*$";
-  /** DateString日期字符串字段校验 **/
+  public final static  String isDateString = "^[1-9][0-9\\-]{0,12}$";
+  /** 文件地址字段校验 **/
   public final static  String isFilePath = "^[a-zA-z0-9/\\.]*$";
   /** 系统来源字段校验 **/
   public final static  String isOriginSystem = "^[a-zA-Z0-9,]*$";
@@ -47,6 +47,22 @@ public class MatchRuleUtil {
    */
   public static boolean isCorrectString(String regex,String str){
     return Pattern.matches(regex, str.trim());
+  }
+
+
+  /**
+   * 通用校验方法
+   * @param regex
+   * @param str
+   * @throws Exception
+   */
+  public static void DataCheck(String regex, String str) throws  Exception {
+    if(null == str || str.length() == 0){
+      return;
+    }
+    if(!isCorrectString(regex,str)){
+      throw new Exception("数据非法！");
+    }
   }
 
 }
